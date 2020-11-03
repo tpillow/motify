@@ -21,6 +21,7 @@ class BaseNotification(tk.Tk):
         self.tickEnabled = tickEnabled
         self.tickResolution = tickResolution
         self.lastTickTime = 0
+        self.notificationOpened = False
 
         # Set any properties we need later
         self.timeout = timeout
@@ -87,18 +88,24 @@ class BaseNotification(tk.Tk):
     def emit_notification_open(self) -> None:
         # Emit to listeners
         self.eventManager.emit(np.EVENT_OPEN, self)
-        # Begin ticking (if enabled)
-        self.setTickEnabled(self.tickEnabled)
-
-    def setTickEnabled(self, enabled: bool) -> None:
-        # Begin ticking (if enabled)
-        if (self.tickEnabled and enabled) or (not self.tickEnabled and not enabled):
-            return
-        elif not self.tickEnabled and enabled:
-            self.tickEnabled = True
+        # Begin ticking for the first time (if enabled)
+        if self.tickEnabled:
             self.lastTickTime = utils.current_time_millis()
             self.after(self.tickResolution, self.emit_notification_tick)
+        # Indiciate that "open" has run
+        self.notificationOpened = True
+
+    def setTickEnabled(self, enabled: bool) -> None:
+        if (self.tickEnabled and enabled) or (not self.tickEnabled and not enabled):
+            return  # No change in state
+        if not self.tickEnabled and enabled:
+            # Need to enable ticking (only if the window is shown)
+            self.tickEnabled = True
+            if self.notificationOpened:
+                self.lastTickTime = utils.current_time_millis()
+                self.after(self.tickResolution, self.emit_notification_tick)
         else:
+            # Otherwise, disable ticking
             self.tickEnabled = False
 
     def emit_notification_tick(self) -> None:
