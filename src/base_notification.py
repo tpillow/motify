@@ -6,9 +6,9 @@ import utils
 
 
 class BaseNotification(tk.Tk):
-    def __init__(self, width: int = 350, height: int = 150, alpha: float = 0.75,
+    def __init__(self, width: int = 350, height: int = 125, alpha: float = 0.75,
                  hAlign: np.HAlignment = np.HAlignment.RIGHT, vAlign: np.VAlignment = np.VAlignment.TOP,
-                 fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 20, vMargin: int = 20,
+                 fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 15, vMargin: int = 15,
                  timeout: int = 3000, alwaysOnTop: bool = True, destroyOnCloseEvent: bool = True,
                  closeOnTimeout: bool = True, tickEnabled: bool = False, tickResolution: int = 40):
         # Init the window
@@ -34,13 +34,34 @@ class BaseNotification(tk.Tk):
         self.attributes("-topmost", alwaysOnTop)
 
         # Create the main canvas
-        self.mainCanvas = tk.Canvas(self, width=width, height=height)
-        self.mainCanvas.pack()
+        self.geometry(f"{width}x{height}")
+        self.mainFrame = tk.Frame(self, bg="red")
+        # Prevent children from determining size
+        self.mainFrame.pack_propagate(0)
+        self.mainFrame.pack(fill=tk.BOTH, expand=1)
 
         # Binds
         self.bind('<Button-1>', self.on_notification_clicked)
 
-        # Position the window
+        # Update notification placement
+        self.update_alignment(hAlign, vAlign, hMargin=hMargin, vMargin=vMargin,
+                              fixedHPosition=fixedHPosition, fixedVPosition=fixedVPosition)
+
+    def show_notification(self) -> None:
+        # Set timeout timer
+        if self.timeout > 0:
+            self.after(self.timeout, self.emit_notification_timeout)
+
+        # Run the pre-open events
+        self.eventManager.emit(np.EVENT_BEFORE_OPEN, self)
+
+        # Run the open event immediately as it starts
+        self.after(0, self.emit_notification_open)
+        self.mainloop()
+
+    def update_alignment(self, hAlign: np.HAlignment, vAlign: np.VAlignment, fixedHPosition: int = 0,
+                         fixedVPosition: int = 0, hMargin: int = 0, vMargin: int = 0) -> None:
+        # Ensure sizes are all updated for below calculations
         self.update_idletasks()
 
         # Horizontal alignment
@@ -66,20 +87,8 @@ class BaseNotification(tk.Tk):
         else:
             yp = fixedVPosition
 
-        # Actually set the size (determined by canvas) and position (alignment)
-        self.geometry(f"{self.winfo_width()}x{self.winfo_height()}+{xp}+{yp}")
-
-    def show_notification(self) -> None:
-        # Set timeout timer
-        if self.timeout > 0:
-            self.after(self.timeout, self.emit_notification_timeout)
-
-        # Run the pre-open events
-        self.eventManager.emit(np.EVENT_BEFORE_OPEN, self)
-
-        # Run the open event immediately as it starts
-        self.after(0, self.emit_notification_open)
-        self.mainloop()
+        # Actually set the position
+        self.geometry(f"+{xp}+{yp}")
 
     def on_notification_clicked(self, event=None) -> None:
         # Emit to listeners

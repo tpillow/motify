@@ -38,6 +38,41 @@ class AlphaFadeInTransition():
         notification.attributes("-alpha", self.alpha)
 
 
+class GrowDownTransition():
+    def __init__(self, duration: float = 1.0, startHeight: int = 0,
+                 endHeight: int = 100, tweenFunc: callable = tween.linear):
+        self.duration = duration
+        self.startHeight = startHeight
+        self.endHeight = endHeight
+        self.tweenFunc = tweenFunc
+        self.timer = 0.0
+        self.bound = False
+
+    def bind(self, notification: bn.BaseNotification) -> None:
+        if self.bound:
+            raise "Cannot bind the same transition to more than one notification"
+        notification.setTickEnabled(True)
+        notification.on(np.EVENT_BEFORE_OPEN, self.before_open)
+        self.bound = True
+
+    def before_open(self, notification: bn.BaseNotification) -> None:
+        self.timer = 0.0
+        notification.geometry(
+            f"{notification.winfo_width()}x{self.startHeight}")
+        notification.on(np.EVENT_TICK, self.tick)
+
+    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+        self.timer += delta
+        self.height = int(self.startHeight +
+                          (self.endHeight - self.startHeight) *
+                          self.tweenFunc(min(1.0, self.timer / self.duration)))
+        if self.height >= self.endHeight:
+            self.height = self.endHeight
+            notification.remove_on(np.EVENT_TICK, self.tick)
+        notification.geometry(
+            f"{notification.winfo_width()}x{self.height}")
+
+
 class AlphaFadeOutTransition():
     def __init__(self, duration: float = 1.0, startAlpha: float = 1.0,
                  endAlpha: float = 0.0, tweenFunc: callable = tween.linear):

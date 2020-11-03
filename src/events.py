@@ -15,7 +15,6 @@ class EventManager():
         self.handlers[eventName].remove(callback)
 
     def emit(self, eventName, *args) -> None:
-        print(f"Emitting event: {eventName}")
         if eventName not in self.handlers:
             return
         for callback in self.handlers[eventName]:
