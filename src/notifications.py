@@ -1,13 +1,40 @@
 # Imports
 import tkinter as tk
-import notification_properties as np
-import events
-import utils
+from enum import Enum
+import time
+import event_manager
+
+EVENT_BEFORE_OPEN: str = "before_open"  # notification
+EVENT_OPEN: str = "open"  # notification
+EVENT_TIMEOUT: str = "timeout"  # notification
+EVENT_CLOSE: str = "close"  # notification
+EVENT_CLICKED: str = "clicked"  # notification
+EVENT_TICK: str = "tick"  # notification, delta: float
+EVENT_HOVER_ON: str = "hover_on"  # notification
+EVENT_HOVER_OFF: str = "hover_off"  # notification
+
+
+class HAlignment(Enum):
+    """Represents horizontal alignment.
+    """
+    LEFT = 1
+    CENTER = 2
+    RIGHT = 3
+    FIXED = 4
+
+
+class VAlignment(Enum):
+    """Represents vertical alignment.
+    """
+    BOTTOM = 1
+    CENTER = 2
+    TOP = 3
+    FIXED = 4
 
 
 class BaseNotification(tk.Tk):
     def __init__(self, width: int = 350, height: int = 125, alpha: float = 1.0,
-                 hAlign: np.HAlignment = np.HAlignment.RIGHT, vAlign: np.VAlignment = np.VAlignment.TOP,
+                 hAlign: HAlignment = HAlignment.RIGHT, vAlign: VAlignment = VAlignment.TOP,
                  fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 15, vMargin: int = 15,
                  timeout: float = 3.0, alwaysOnTop: bool = True, destroyOnCloseEvent: bool = True,
                  closeOnTimeout: bool = True, tickResolution: int = 40, borderSize: int = 2, borderColor: str = "#ffffff",
@@ -16,7 +43,7 @@ class BaseNotification(tk.Tk):
         tk.Tk.__init__(self)
 
         # Our event system
-        self.eventManager = events.EventManager()
+        self.eventManager = event_manager.EventManager()
         self.destroyOnCloseEvent = destroyOnCloseEvent
         self.closeOnTimeout = closeOnTimeout
         self.tickResolution = tickResolution
@@ -62,35 +89,35 @@ class BaseNotification(tk.Tk):
         self.timeoutTimer = 0.0
 
         # Run the pre-open events
-        self.eventManager.emit(np.EVENT_BEFORE_OPEN, self)
+        self.eventManager.emit(EVENT_BEFORE_OPEN, self)
 
         # Run the open event immediately as it starts
         self.after(0, self.emit_notification_open)
         self.mainloop()
 
-    def update_alignment(self, hAlign: np.HAlignment, vAlign: np.VAlignment, fixedHPosition: int = 0,
+    def update_alignment(self, hAlign: HAlignment, vAlign: VAlignment, fixedHPosition: int = 0,
                          fixedVPosition: int = 0, hMargin: int = 0, vMargin: int = 0) -> None:
         # Ensure sizes are all updated for below calculations
         self.update_idletasks()
 
         # Horizontal alignment
-        if hAlign == np.HAlignment.CENTER:
+        if hAlign == HAlignment.CENTER:
             xp = int((self.winfo_screenwidth() / 2) - (self.winfo_width() / 2))
-        elif hAlign == np.HAlignment.LEFT:
+        elif hAlign == HAlignment.LEFT:
             xp = hMargin
-        elif hAlign == np.HAlignment.RIGHT:
+        elif hAlign == HAlignment.RIGHT:
             xp = int(self.winfo_screenwidth() -
                      self.winfo_width() - hMargin)
         else:
             xp = fixedHPosition
 
         # Vertical alignment
-        if vAlign == np.VAlignment.CENTER:
+        if vAlign == VAlignment.CENTER:
             yp = int((self.winfo_screenheight() / 2) -
                      (self.winfo_height() / 2))
-        elif vAlign == np.VAlignment.TOP:
+        elif vAlign == VAlignment.TOP:
             yp = vMargin
-        elif vAlign == np.VAlignment.BOTTOM:
+        elif vAlign == VAlignment.BOTTOM:
             yp = int(self.winfo_screenheight() -
                      self.winfo_height() - vMargin)
         else:
@@ -101,7 +128,7 @@ class BaseNotification(tk.Tk):
 
     def on_notification_clicked(self, event=None) -> None:
         # Emit to listeners
-        self.eventManager.emit(np.EVENT_CLICKED, self)
+        self.eventManager.emit(EVENT_CLICKED, self)
 
     def on_hover_on(self, event=None) -> None:
         # For some reason, tkinter emits this event twice...
@@ -109,7 +136,7 @@ class BaseNotification(tk.Tk):
             return
         # Emit to listeners
         self.isHoveringOn = True
-        self.eventManager.emit(np.EVENT_HOVER_ON, self)
+        self.eventManager.emit(EVENT_HOVER_ON, self)
 
     def on_hover_off(self, event=None) -> None:
         # For some reason, tkinter emits this event twice...
@@ -117,19 +144,19 @@ class BaseNotification(tk.Tk):
             return
         # Emit to listeners
         self.isHoveringOn = False
-        self.eventManager.emit(np.EVENT_HOVER_OFF, self)
+        self.eventManager.emit(EVENT_HOVER_OFF, self)
 
     def emit_notification_open(self) -> None:
         # Emit to listeners
-        self.eventManager.emit(np.EVENT_OPEN, self)
+        self.eventManager.emit(EVENT_OPEN, self)
         # Begin ticking for the first time
-        self.lastTickTime = utils.current_time_millis()
+        self.lastTickTime = int(round(time.time() * 1000))
         self.after(self.tickResolution, self.emit_notification_tick)
         # Indiciate that "open" has run
         self.notificationOpened = True
 
     def emit_notification_tick(self) -> None:
-        curTime: int = utils.current_time_millis()
+        curTime: int = int(round(time.time() * 1000))
         delta: float = float(curTime - self.lastTickTime) / 1000.0
         self.lastTickTime = curTime
 
@@ -140,19 +167,19 @@ class BaseNotification(tk.Tk):
                 self.didTimeout = True
                 self.emit_notification_timeout()
 
-        self.eventManager.emit(np.EVENT_TICK, self, delta)
+        self.eventManager.emit(EVENT_TICK, self, delta)
         self.after(self.tickResolution, self.emit_notification_tick)
 
     def emit_notification_timeout(self) -> None:
         # Emit to listeners
-        self.eventManager.emit(np.EVENT_TIMEOUT, self)
+        self.eventManager.emit(EVENT_TIMEOUT, self)
         # Close if we are set to
         if self.closeOnTimeout:
             self.emit_notification_close()
 
     def emit_notification_close(self) -> None:
         # Emit to listeners
-        self.eventManager.emit(np.EVENT_CLOSE, self)
+        self.eventManager.emit(EVENT_CLOSE, self)
         # Close ourselves if we are set to
         if self.destroyOnCloseEvent:
             self.destroy()
@@ -169,69 +196,3 @@ class BaseNotification(tk.Tk):
 
     def remove_on(self, eventName: str, callback: callable) -> None:
         self.eventManager.remove_on(eventName, callback)
-
-
-class ButtonComponent():
-    def __init__(self, btnText: str, callback: callable, padx: int = 10, pady: int = 0, backgroundColor: str = "#333333"):
-        self.btnText = btnText
-        self.callback = callback
-        self.padx = padx
-        self.pady = pady
-        self.backgroundColor = backgroundColor
-
-    def bind(self, notification: BaseNotification):
-        self.frame = tk.Frame(notification.frame, bg=self.backgroundColor)
-        self.frame.pack(fill=tk.X, side=tk.BOTTOM)
-
-        self.btn = tk.Button(self.frame,
-                             text=self.btnText, command=self.callback, padx=self.padx, pady=self.pady)
-        self.btn.pack()
-
-
-class TextComponent():
-    def __init__(self, text: str, backgroundColor: str = "#333333", textColor: str = "#ffffff",
-                 fontName: str = "Courier", fontSize: int = 12, justify: str = tk.CENTER,
-                 fill: str = tk.BOTH, expand: float = 1):
-        self.text = text
-        self.backgroundColor = backgroundColor
-        self.textColor = textColor
-        self.fontName = fontName
-        self.fontSize = fontSize
-        self.justify = justify
-        self.fill = fill
-        self.expand = expand
-
-    def bind(self, notification: BaseNotification) -> None:
-        # The text label
-        self.label = tk.Label(
-            notification.frame, text=self.text, bg=self.backgroundColor, fg=self.textColor, wraplength=notification.winfo_width(), justify=self.justify)
-        self.label.config(font=(self.fontName, self.fontSize))
-        self.label.pack(fill=self.fill, expand=self.expand)
-
-
-class TimeoutProgressBarComponent():
-    def __init__(self, timeoutBarHeight: int = 3, timeoutBarBackgroundColor: str = "#ff0000",
-                 timeoutBarForegroundColor: str = "#00ff00"):
-        self.timeoutBarHeight = timeoutBarHeight
-        self.timeoutBarBackgroundColor = timeoutBarBackgroundColor
-        self.timeoutBarForegroundColor = timeoutBarForegroundColor
-
-    def bind(self, notification: BaseNotification) -> None:
-        self.timeoutCanvas = tk.Canvas(
-            notification.frame, height=self.timeoutBarHeight, highlightthickness=0)
-        self.timeoutCanvas.pack(fill=tk.X, side=tk.BOTTOM, expand=0)
-
-        notification.update_idletasks()
-
-        self.timeoutBarBackground = self.timeoutCanvas.create_rectangle(
-            0, 0, self.timeoutCanvas.winfo_width(), self.timeoutCanvas.winfo_height(), fill=self.timeoutBarBackgroundColor)
-        self.timeoutBarForeground = self.timeoutCanvas.create_rectangle(
-            0, 0, 0, self.timeoutCanvas.winfo_height(), fill=self.timeoutBarForegroundColor)
-
-        notification.on(np.EVENT_TICK, self.update_timeout_progress_bar)
-
-    def update_timeout_progress_bar(self, notification: BaseNotification, delta: float):
-        self.timeoutCanvas.coords(self.timeoutBarForeground, 0, 0,
-                                  int(notification.timeoutTimer / notification.timeout *
-                                      self.timeoutCanvas.winfo_width()),
-                                  self.timeoutCanvas.winfo_height())

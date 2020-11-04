@@ -1,8 +1,7 @@
 # Imports
 import pytweening as tween
-import utils
+import time
 import notifications as bn
-import notification_properties as np
 
 
 class AlphaFadeInTransition():
@@ -18,13 +17,13 @@ class AlphaFadeInTransition():
     def bind(self, notification: bn.BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(np.EVENT_BEFORE_OPEN, self.before_open)
+        notification.on(bn.EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
     def before_open(self, notification: bn.BaseNotification) -> None:
         self.timer = 0.0
         notification.attributes("-alpha", self.startAlpha)
-        notification.on(np.EVENT_TICK, self.tick)
+        notification.on(bn.EVENT_TICK, self.tick)
 
     def tick(self, notification: bn.BaseNotification, delta: float) -> None:
         self.timer += delta
@@ -33,8 +32,9 @@ class AlphaFadeInTransition():
             self.tweenFunc(min(1.0, self.timer / self.duration))
         if self.alpha >= self.endAlpha:
             self.alpha = self.endAlpha
-            notification.remove_on(np.EVENT_TICK, self.tick)
-        notification.attributes("-alpha", self.alpha)
+            notification.remove_on(bn.EVENT_TICK, self.tick)
+        else:
+            notification.attributes("-alpha", self.alpha)
 
 
 class GrowDownTransition():
@@ -50,14 +50,14 @@ class GrowDownTransition():
     def bind(self, notification: bn.BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(np.EVENT_BEFORE_OPEN, self.before_open)
+        notification.on(bn.EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
     def before_open(self, notification: bn.BaseNotification) -> None:
         self.timer = 0.0
         notification.geometry(
             f"{notification.winfo_width()}x{self.startHeight}")
-        notification.on(np.EVENT_TICK, self.tick)
+        notification.on(bn.EVENT_TICK, self.tick)
 
     def tick(self, notification: bn.BaseNotification, delta: float) -> None:
         self.timer += delta
@@ -66,9 +66,10 @@ class GrowDownTransition():
                           self.tweenFunc(min(1.0, self.timer / self.duration)))
         if self.height >= self.endHeight:
             self.height = self.endHeight
-            notification.remove_on(np.EVENT_TICK, self.tick)
-        notification.geometry(
-            f"{notification.winfo_width()}x{self.height}")
+            notification.remove_on(bn.EVENT_TICK, self.tick)
+        else:
+            notification.geometry(
+                f"{notification.winfo_width()}x{self.height}")
 
 
 class AlphaFadeOutTransition():
@@ -85,13 +86,13 @@ class AlphaFadeOutTransition():
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
         notification.destroyOnCloseEvent = False
-        notification.on(np.EVENT_CLOSE, self.on_close)
+        notification.on(bn.EVENT_CLOSE, self.on_close)
         self.bound = True
 
     def on_close(self, notification: bn.BaseNotification) -> None:
         self.timer = 0.0
         notification.attributes("-alpha", self.startAlpha)
-        notification.on(np.EVENT_TICK, self.tick)
+        notification.on(bn.EVENT_TICK, self.tick)
 
     def tick(self, notification: bn.BaseNotification, delta: float) -> None:
         self.timer += delta
@@ -99,7 +100,44 @@ class AlphaFadeOutTransition():
             (self.endAlpha - self.startAlpha) * \
             self.tweenFunc(min(1.0, self.timer / self.duration))
         if self.alpha <= self.endAlpha:
-            notification.remove_on(np.EVENT_TICK, self.tick)
+            notification.remove_on(bn.EVENT_TICK, self.tick)
             notification.destroy()
         else:
             notification.attributes("-alpha", self.alpha)
+
+
+class ShrinkUpTransition():
+    def __init__(self, duration: float = 1.0, startHeight: int = 100,
+                 endHeight: int = 0, tweenFunc: callable = tween.easeInQuad):
+        self.duration = duration
+        self.startHeight = startHeight
+        self.endHeight = endHeight
+        self.tweenFunc = tweenFunc
+        self.timer = 0.0
+        self.bound = False
+
+    def bind(self, notification: bn.BaseNotification) -> None:
+        if self.bound:
+            raise "Cannot bind the same transition to more than one notification"
+        notification.destroyOnCloseEvent = False
+        notification.on(bn.EVENT_CLOSE, self.on_close)
+        self.bound = True
+
+    def on_close(self, notification: bn.BaseNotification) -> None:
+        self.timer = 0.0
+        notification.geometry(
+            f"{notification.winfo_width()}x{self.startHeight}")
+        notification.on(bn.EVENT_TICK, self.tick)
+
+    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+        self.timer += delta
+        self.height = int(self.startHeight +
+                          (self.endHeight - self.startHeight) *
+                          self.tweenFunc(min(1.0, self.timer / self.duration)))
+        if self.height <= self.endHeight:
+            self.height = self.endHeight
+            notification.remove_on(bn.EVENT_TICK, self.tick)
+            notification.destroy()
+        else:
+            notification.geometry(
+                f"{notification.winfo_width()}x{self.height}")
