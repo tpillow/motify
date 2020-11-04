@@ -7,7 +7,7 @@ import notification_properties as np
 
 class AlphaFadeInTransition():
     def __init__(self, duration: float = 1.0, startAlpha: float = 0.0,
-                 endAlpha: float = 1.0, tweenFunc: callable = tween.linear):
+                 endAlpha: float = 1.0, tweenFunc: callable = tween.easeOutQuad):
         self.duration = duration
         self.startAlpha = startAlpha
         self.endAlpha = endAlpha
@@ -39,7 +39,7 @@ class AlphaFadeInTransition():
 
 class GrowDownTransition():
     def __init__(self, duration: float = 1.0, startHeight: int = 0,
-                 endHeight: int = 100, tweenFunc: callable = tween.linear):
+                 endHeight: int = 100, tweenFunc: callable = tween.easeOutQuad):
         self.duration = duration
         self.startHeight = startHeight
         self.endHeight = endHeight
@@ -73,7 +73,7 @@ class GrowDownTransition():
 
 class AlphaFadeOutTransition():
     def __init__(self, duration: float = 1.0, startAlpha: float = 1.0,
-                 endAlpha: float = 0.0, tweenFunc: callable = tween.linear):
+                 endAlpha: float = 0.0, tweenFunc: callable = tween.easeInQuad):
         self.duration = duration
         self.startAlpha = startAlpha
         self.endAlpha = endAlpha

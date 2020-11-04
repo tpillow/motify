@@ -20,15 +20,13 @@ test = bn.SimpleTextNotificationWithTimeoutBar(
     hoverBackgroundColor=COLOR_BG_DARKER, hoverTextColor=COLOR_BASE_LIGHER,
     hoverBorderColor=COLOR_HEADER, borderColor=COLOR_SECONDARY, cursor="spider",
     timeoutBarBackgroundColor=COLOR_BG, timeoutBarForegroundColor=COLOR_HEADER,
-    timeout=3.0)
-
-# test = bn.BaseNotification()
+    timeout=3.0, hAlign=np.HAlignment.RIGHT, vAlign=np.VAlignment.CENTER)
 
 fadeIn = nt.AlphaFadeInTransition()
 fadeIn.bind(test)
 
 growDown = nt.GrowDownTransition(
-    duration=0.3, tweenFunc=tween.easeOutQuad, endHeight=test.winfo_height())
+    duration=0.3, endHeight=test.winfo_height())
 growDown.bind(test)
 
 fadeOut = nt.AlphaFadeOutTransition(tweenFunc=tween.easeOutBack)
