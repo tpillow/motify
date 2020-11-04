@@ -6,4 +6,14 @@ Just need to show a notification to the user on any OS? Don't want the native no
 
 ## Developer Resources
 
-Motify uses tkinter, which comes installed with Python 3. All other dependencies can be found in `dependencies.txt` and installed using `pip`.
+Motify uses tkinter, which comes installed with Python 3.
+
+### PyPi Info
+
+```
+py -3 setup.py sdist bdist_wheel
+py -3 -m twine upload --repository testpypi dist/*
+Use __token__ as username. Token as password.
+
+pip install --index-url https://test.pypi.org/simple/ --no-deps motify-tpillow
+```
