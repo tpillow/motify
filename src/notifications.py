@@ -10,7 +10,8 @@ class BaseNotification(tk.Tk):
                  hAlign: np.HAlignment = np.HAlignment.RIGHT, vAlign: np.VAlignment = np.VAlignment.TOP,
                  fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 15, vMargin: int = 15,
                  timeout: float = 3.0, alwaysOnTop: bool = True, destroyOnCloseEvent: bool = True,
-                 closeOnTimeout: bool = True, tickResolution: int = 40, **kwargs):
+                 closeOnTimeout: bool = True, tickResolution: int = 40, borderSize: int = 2, borderColor: str = "#ffffff",
+                 borderRelief: str = "flat", cursor: str = "arrow", **kwargs):
         # Init the window
         tk.Tk.__init__(self)
 
@@ -20,12 +21,14 @@ class BaseNotification(tk.Tk):
         self.closeOnTimeout = closeOnTimeout
         self.tickResolution = tickResolution
         self.timeout = timeout
+        self.borderColor = borderColor
         self.timeoutTimer = 0.0
         self.timeoutTimerRunning = True
         self.lastTickTime = 0
         self.notificationOpened = False
         self.isHoveringOn = False
         self.didTimeout = False
+        self.components = []
 
         # Remove window border
         self.wm_overrideredirect(True)
@@ -36,6 +39,12 @@ class BaseNotification(tk.Tk):
 
         # Set the size of the notification window
         self.geometry(f"{width}x{height}")
+
+        # The frame / border decoration
+        self.frame = tk.Frame(self, bd=0, highlightbackground=borderColor, highlightcolor=borderColor,
+                              highlightthickness=borderSize, relief=borderRelief, cursor=cursor)
+        self.frame.pack_propagate(0)
+        self.frame.pack(fill=tk.BOTH, expand=1)
 
         # Bind any click event on the window
         self.bind("<Button-1>", self.on_notification_clicked)
@@ -148,6 +157,13 @@ class BaseNotification(tk.Tk):
         if self.destroyOnCloseEvent:
             self.destroy()
 
+    def addComponent(self, component) -> None:
+        if component in self.components:
+            raise BaseException(
+                "Cannot add the same component twice to a notification!")
+        self.components.append(component)
+        component.bind(self)
+
     def on(self, eventName: str, callback: callable) -> None:
         self.eventManager.on(eventName, callback)
 
@@ -155,83 +171,67 @@ class BaseNotification(tk.Tk):
         self.eventManager.remove_on(eventName, callback)
 
 
-class SimpleTextNotification(BaseNotification):
-    def __init__(self, text: str, backgroundColor: str = "#333333", textColor: str = "#ffffff",
-                 closeOnClick: bool = False, fontName: str = "Courier", fontSize: int = 12,
-                 hoverBackgroundColor: str = "#666666", hoverTextColor: str = "#ffffff",
-                 resetTimeoutOnHover: bool = True, borderSize: int = 2, borderColor: str = "#ffffff",
-                 borderRelief: str = "flat", cursor: str = "arrow", hoverBorderColor: str = "#999999", **kwargs):
-        BaseNotification.__init__(self, **kwargs)
-
-        # Save colors
+class ButtonComponent():
+    def __init__(self, btnText: str, callback: callable, padx: int = 10, pady: int = 0, backgroundColor: str = "#333333"):
+        self.btnText = btnText
+        self.callback = callback
+        self.padx = padx
+        self.pady = pady
         self.backgroundColor = backgroundColor
-        self.hoverBackgroundColor = hoverBackgroundColor
+
+    def bind(self, notification: BaseNotification):
+        self.frame = tk.Frame(notification.frame, bg=self.backgroundColor)
+        self.frame.pack(fill=tk.X, side=tk.BOTTOM)
+
+        self.btn = tk.Button(self.frame,
+                             text=self.btnText, command=self.callback, padx=self.padx, pady=self.pady)
+        self.btn.pack()
+
+
+class TextComponent():
+    def __init__(self, text: str, backgroundColor: str = "#333333", textColor: str = "#ffffff",
+                 fontName: str = "Courier", fontSize: int = 12, justify: str = tk.CENTER,
+                 fill: str = tk.BOTH, expand: float = 1):
+        self.text = text
+        self.backgroundColor = backgroundColor
         self.textColor = textColor
-        self.hoverTextColor = hoverTextColor
-        self.borderColor = borderColor
-        self.hoverBorderColor = hoverBorderColor
-        self.resetTimeoutOnHover = resetTimeoutOnHover
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.justify = justify
+        self.fill = fill
+        self.expand = expand
 
-        # The frame / border decoration
-        self.frame = tk.Frame(self, bd=0, highlightbackground=self.borderColor, highlightcolor=self.borderColor,
-                              highlightthickness=borderSize, relief=borderRelief, cursor=cursor)
-        self.frame.pack_propagate(0)
-        self.frame.pack(fill=tk.BOTH, expand=1)
-
+    def bind(self, notification: BaseNotification) -> None:
         # The text label
         self.label = tk.Label(
-            self.frame, text=text, bg=self.backgroundColor, fg=self.textColor, wraplength=self.winfo_width())
-        self.label.config(font=(fontName, fontSize))
-        self.label.pack(fill=tk.BOTH, expand=1)
-
-        # Hover handlers
-        self.on(np.EVENT_HOVER_ON, self.set_hover_style)
-        self.on(np.EVENT_HOVER_OFF, self.set_normal_style)
-
-        # Setup close on click
-        if closeOnClick:
-            self.on(np.EVENT_CLICKED, self.perform_close)
-
-    def perform_close(self, notification: BaseNotification):
-        self.emit_notification_close()
-
-    def set_hover_style(self, notification: BaseNotification):
-        self.label.config(bg=self.hoverBackgroundColor, fg=self.hoverTextColor)
-        self.frame.config(highlightbackground=self.hoverBorderColor,
-                          highlightcolor=self.hoverBorderColor)
-        if self.resetTimeoutOnHover:
-            self.timeoutTimerRunning = False
-            self.timeoutTimer = 0.0
-
-    def set_normal_style(self, notification: BaseNotification):
-        self.label.config(bg=self.backgroundColor, fg=self.textColor)
-        self.frame.config(highlightbackground=self.borderColor,
-                          highlightcolor=self.borderColor)
-        if self.resetTimeoutOnHover:
-            self.timeoutTimer = 0.0
-            self.timeoutTimerRunning = True
+            notification.frame, text=self.text, bg=self.backgroundColor, fg=self.textColor, wraplength=notification.winfo_width(), justify=self.justify)
+        self.label.config(font=(self.fontName, self.fontSize))
+        self.label.pack(fill=self.fill, expand=self.expand)
 
 
-class SimpleTextNotificationWithTimeoutBar(SimpleTextNotification):
-    def __init__(self, text: str, timeoutBarHeight: int = 3, timeoutBarBackgroundColor: str = "#ff0000",
-                 timeoutBarForegroundColor: str = "#00ff00", **kwargs):
-        SimpleTextNotification.__init__(self, text, **kwargs)
+class TimeoutProgressBarComponent():
+    def __init__(self, timeoutBarHeight: int = 3, timeoutBarBackgroundColor: str = "#ff0000",
+                 timeoutBarForegroundColor: str = "#00ff00"):
+        self.timeoutBarHeight = timeoutBarHeight
+        self.timeoutBarBackgroundColor = timeoutBarBackgroundColor
+        self.timeoutBarForegroundColor = timeoutBarForegroundColor
 
+    def bind(self, notification: BaseNotification) -> None:
         self.timeoutCanvas = tk.Canvas(
-            self.frame, height=timeoutBarHeight, highlightthickness=0)
+            notification.frame, height=self.timeoutBarHeight, highlightthickness=0)
         self.timeoutCanvas.pack(fill=tk.X, side=tk.BOTTOM, expand=0)
 
-        self.update_idletasks()
+        notification.update_idletasks()
 
         self.timeoutBarBackground = self.timeoutCanvas.create_rectangle(
-            0, 0, self.timeoutCanvas.winfo_width(), self.timeoutCanvas.winfo_height(), fill=timeoutBarBackgroundColor)
+            0, 0, self.timeoutCanvas.winfo_width(), self.timeoutCanvas.winfo_height(), fill=self.timeoutBarBackgroundColor)
         self.timeoutBarForeground = self.timeoutCanvas.create_rectangle(
-            0, 0, 0, self.timeoutCanvas.winfo_height(), fill=timeoutBarForegroundColor)
+            0, 0, 0, self.timeoutCanvas.winfo_height(), fill=self.timeoutBarForegroundColor)
 
-        self.on(np.EVENT_TICK, self.update_timeout_progress_bar)
+        notification.on(np.EVENT_TICK, self.update_timeout_progress_bar)
 
     def update_timeout_progress_bar(self, notification: BaseNotification, delta: float):
         self.timeoutCanvas.coords(self.timeoutBarForeground, 0, 0,
-                                  int(self.timeoutTimer / self.timeout *
+                                  int(notification.timeoutTimer / notification.timeout *
                                       self.timeoutCanvas.winfo_width()),
                                   self.timeoutCanvas.winfo_height())
