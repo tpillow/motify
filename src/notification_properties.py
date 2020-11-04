@@ -6,6 +6,8 @@ EVENT_TIMEOUT: str = "timeout"  # notification
 EVENT_CLOSE: str = "close"  # notification
 EVENT_CLICKED: str = "clicked"  # notification
 EVENT_TICK: str = "tick"  # notification, delta: float
+EVENT_HOVER_ON: str = "hover_on"  # notification
+EVENT_HOVER_OFF: str = "hover_off"  # notification
 
 
 class HAlignment(Enum):

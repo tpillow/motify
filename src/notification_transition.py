@@ -1,7 +1,7 @@
 # Imports
 import pytweening as tween
 import utils
-import base_notification as bn
+import notifications as bn
 import notification_properties as np
 
 
@@ -18,7 +18,6 @@ class AlphaFadeInTransition():
     def bind(self, notification: bn.BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.setTickEnabled(True)
         notification.on(np.EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
@@ -51,7 +50,6 @@ class GrowDownTransition():
     def bind(self, notification: bn.BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.setTickEnabled(True)
         notification.on(np.EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
@@ -86,7 +84,6 @@ class AlphaFadeOutTransition():
     def bind(self, notification: bn.BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.setTickEnabled(True)
         notification.destroyOnCloseEvent = False
         notification.on(np.EVENT_CLOSE, self.on_close)
         self.bound = True

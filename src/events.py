@@ -6,7 +6,8 @@ class EventManager():
         if eventName not in self.handlers:
             self.handlers[eventName] = []
         if callback in self.handlers[eventName]:
-            raise "Cannot have duplicate callback in EventManager!"
+            raise BaseException(
+                f"Cannot have duplicate callback in EventManager for event {eventName}!")
         self.handlers[eventName].append(callback)
 
     def remove_on(self, eventName: str, callback: callable) -> None:
@@ -15,6 +16,7 @@ class EventManager():
         self.handlers[eventName].remove(callback)
 
     def emit(self, eventName, *args) -> None:
+        # print(f"EMITTING {eventName}")
         if eventName not in self.handlers:
             return
         for callback in self.handlers[eventName]:
