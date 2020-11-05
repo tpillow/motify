@@ -56,6 +56,7 @@ class BaseNotification(tk.Tk):
         self.isHoveringOn = False
         self.didTimeout = False
         self.components = []
+        self.afterIds = []
 
         # Remove window border
         self.wm_overrideredirect(True)
@@ -92,7 +93,7 @@ class BaseNotification(tk.Tk):
         self.eventManager.emit(EVENT_BEFORE_OPEN, self)
 
         # Run the open event immediately as it starts
-        self.after(0, self.emit_notification_open)
+        self.make_after(0, self.emit_notification_open)
         self.mainloop()
 
     def update_alignment(self, hAlign: HAlignment, vAlign: VAlignment, fixedHPosition: int = 0,
@@ -151,7 +152,7 @@ class BaseNotification(tk.Tk):
         self.eventManager.emit(EVENT_OPEN, self)
         # Begin ticking for the first time
         self.lastTickTime = int(round(time.time() * 1000))
-        self.after(self.tickResolution, self.emit_notification_tick)
+        self.make_after(self.tickResolution, self.emit_notification_tick)
         # Indiciate that "open" has run
         self.notificationOpened = True
 
@@ -168,7 +169,7 @@ class BaseNotification(tk.Tk):
                 self.emit_notification_timeout()
 
         self.eventManager.emit(EVENT_TICK, self, delta)
-        self.after(self.tickResolution, self.emit_notification_tick)
+        self.make_after(self.tickResolution, self.emit_notification_tick)
 
     def emit_notification_timeout(self) -> None:
         # Emit to listeners
@@ -184,12 +185,22 @@ class BaseNotification(tk.Tk):
         if self.destroyOnCloseEvent:
             self.destroy()
 
-    def addComponent(self, component) -> None:
+    def add_component(self, component) -> None:
         if component in self.components:
             raise BaseException(
                 "Cannot add the same component twice to a notification!")
         self.components.append(component)
         component.bind(self)
+
+    def make_after(self, waitMillis: int, func: callable) -> None:
+        self.afterIds.append(self.after(waitMillis, func))
+
+    def destroy_now(self) -> None:
+        # Remove all after callbacks (due to a weird bug with multiple notifications)
+        for afterId in self.afterIds:
+            self.after_cancel(afterId)
+        # Then destroy the app
+        self.destroy()
 
     def on(self, eventName: str, callback: callable) -> None:
         self.eventManager.on(eventName, callback)

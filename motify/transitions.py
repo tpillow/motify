@@ -101,7 +101,7 @@ class AlphaFadeOutTransition():
             self.tweenFunc(min(1.0, self.timer / self.duration))
         if self.alpha <= self.endAlpha:
             notification.remove_on(EVENT_TICK, self.tick)
-            notification.destroy()
+            notification.destroy_now()
         else:
             notification.attributes("-alpha", self.alpha)
 
@@ -137,7 +137,7 @@ class ShrinkUpTransition():
         if self.height <= self.endHeight:
             self.height = self.endHeight
             notification.remove_on(EVENT_TICK, self.tick)
-            notification.destroy()
+            notification.destroy_now()
         else:
             notification.geometry(
                 f"{notification.winfo_width()}x{self.height}")
