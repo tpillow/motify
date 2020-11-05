@@ -6,12 +6,11 @@ from .event_manager import *
 
 EVENT_BEFORE_OPEN: str = "before_open"  # notification
 EVENT_OPEN: str = "open"  # notification
-EVENT_TIMEOUT: str = "timeout"  # notification
 EVENT_CLOSE: str = "close"  # notification
 EVENT_CLICKED: str = "clicked"  # notification
-EVENT_TICK: str = "tick"  # notification, delta: float
 EVENT_HOVER_ON: str = "hover_on"  # notification
 EVENT_HOVER_OFF: str = "hover_off"  # notification
+EVENT_TICK: str = "tick"  # notification, delta: float
 
 
 class HAlignment(Enum):
@@ -37,24 +36,27 @@ class BaseNotification(tk.Tk):
                  hAlign: HAlignment = HAlignment.RIGHT, vAlign: VAlignment = VAlignment.TOP,
                  fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 15, vMargin: int = 15,
                  timeout: float = 3.0, alwaysOnTop: bool = True, destroyOnCloseEvent: bool = True,
-                 closeOnTimeout: bool = True, tickResolution: int = 40, borderSize: int = 2, borderColor: str = "#ffffff",
+                 tickResolution: int = 33, borderSize: int = 2, borderColor: str = "#666666",
                  borderRelief: str = "flat", cursor: str = "arrow", **kwargs):
         # Init the window
         tk.Tk.__init__(self)
 
-        # Our event system
+        # Variables to store
         self.eventManager = EventManager()
         self.destroyOnCloseEvent = destroyOnCloseEvent
-        self.closeOnTimeout = closeOnTimeout
         self.tickResolution = tickResolution
         self.timeout = timeout
-        self.borderColor = borderColor
+
+        # Standard variables
+        self.lastTickTime = 0
         self.timeoutTimer = 0.0
         self.timeoutTimerRunning = True
-        self.lastTickTime = 0
-        self.notificationOpened = False
-        self.isHoveringOn = False
+        self.shown = False
+        self.openEmitted = False
+        self.closeEmitted = False
+        self.destroyed = False
         self.didTimeout = False
+        self.isHoveringOn = False
         self.components = []
         self.afterIds = []
 
@@ -86,6 +88,12 @@ class BaseNotification(tk.Tk):
                               fixedHPosition=fixedHPosition, fixedVPosition=fixedVPosition)
 
     def show_notification(self) -> None:
+        # Can't show the same notification twice
+        if self.shown:
+            raise BaseException(
+                "Cannot show the same notification more than once.")
+        self.shown = True
+
         # Set timeout timer
         self.timeoutTimer = 0.0
 
@@ -95,6 +103,64 @@ class BaseNotification(tk.Tk):
         # Run the open event immediately as it starts
         self.make_after(0, self.emit_notification_open)
         self.mainloop()
+
+    def on_notification_clicked(self, event=None) -> None:
+        # Emit to listeners
+        self.eventManager.emit(EVENT_CLICKED, self)
+
+    def on_hover_on(self, event=None) -> None:
+        # For some reason, tkinter emits this event twice...
+        if self.isHoveringOn:
+            return
+        # Emit to listeners
+        self.isHoveringOn = True
+        self.eventManager.emit(EVENT_HOVER_ON, self)
+
+    def on_hover_off(self, event=None) -> None:
+        # For some reason, tkinter emits this event twice...
+        if not self.isHoveringOn:
+            return
+        # Emit to listeners
+        self.isHoveringOn = False
+        self.eventManager.emit(EVENT_HOVER_OFF, self)
+
+    def emit_notification_open(self) -> None:
+        # Only if not already done
+        if self.openEmitted:
+            return
+        self.openEmitted = True
+        # Emit to listeners
+        self.eventManager.emit(EVENT_OPEN, self)
+        # Begin ticking for the first time
+        self.lastTickTime = int(round(time.time() * 1000))
+        self.make_after(self.tickResolution, self.emit_notification_tick)
+
+    def emit_notification_tick(self) -> None:
+        # Calculate delta time
+        curTime: int = int(round(time.time() * 1000))
+        delta: float = float(curTime - self.lastTickTime) / 1000.0
+        self.lastTickTime = curTime
+
+        # Do our own update for the timeout timer
+        if self.timeoutTimerRunning:
+            self.timeoutTimer += delta
+            if self.timeoutTimer >= self.timeout and not self.didTimeout:
+                self.emit_notification_close()
+
+        # Emit the tick event, and re-start the ticker
+        self.eventManager.emit(EVENT_TICK, self, delta)
+        self.make_after(self.tickResolution, self.emit_notification_tick)
+
+    def emit_notification_close(self) -> None:
+        # Only if not already done
+        if self.closeEmitted:
+            return
+        self.closeEmitted = True
+        # Emit to listeners
+        self.eventManager.emit(EVENT_CLOSE, self)
+        # Close ourselves if we are set to
+        if self.destroyOnCloseEvent:
+            self.destroy_now()
 
     def update_alignment(self, hAlign: HAlignment, vAlign: VAlignment, fixedHPosition: int = 0,
                          fixedVPosition: int = 0, hMargin: int = 0, vMargin: int = 0) -> None:
@@ -127,75 +193,21 @@ class BaseNotification(tk.Tk):
         # Actually set the position
         self.geometry(f"+{xp}+{yp}")
 
-    def on_notification_clicked(self, event=None) -> None:
-        # Emit to listeners
-        self.eventManager.emit(EVENT_CLICKED, self)
-
-    def on_hover_on(self, event=None) -> None:
-        # For some reason, tkinter emits this event twice...
-        if self.isHoveringOn:
-            return
-        # Emit to listeners
-        self.isHoveringOn = True
-        self.eventManager.emit(EVENT_HOVER_ON, self)
-
-    def on_hover_off(self, event=None) -> None:
-        # For some reason, tkinter emits this event twice...
-        if not self.isHoveringOn:
-            return
-        # Emit to listeners
-        self.isHoveringOn = False
-        self.eventManager.emit(EVENT_HOVER_OFF, self)
-
-    def emit_notification_open(self) -> None:
-        # Emit to listeners
-        self.eventManager.emit(EVENT_OPEN, self)
-        # Begin ticking for the first time
-        self.lastTickTime = int(round(time.time() * 1000))
-        self.make_after(self.tickResolution, self.emit_notification_tick)
-        # Indiciate that "open" has run
-        self.notificationOpened = True
-
-    def emit_notification_tick(self) -> None:
-        curTime: int = int(round(time.time() * 1000))
-        delta: float = float(curTime - self.lastTickTime) / 1000.0
-        self.lastTickTime = curTime
-
-        # Do our own update for the timeout timer
-        if self.timeoutTimerRunning:
-            self.timeoutTimer += delta
-            if self.timeoutTimer >= self.timeout and not self.didTimeout:
-                self.didTimeout = True
-                self.emit_notification_timeout()
-
-        self.eventManager.emit(EVENT_TICK, self, delta)
-        self.make_after(self.tickResolution, self.emit_notification_tick)
-
-    def emit_notification_timeout(self) -> None:
-        # Emit to listeners
-        self.eventManager.emit(EVENT_TIMEOUT, self)
-        # Close if we are set to
-        if self.closeOnTimeout:
-            self.emit_notification_close()
-
-    def emit_notification_close(self) -> None:
-        # Emit to listeners
-        self.eventManager.emit(EVENT_CLOSE, self)
-        # Close ourselves if we are set to
-        if self.destroyOnCloseEvent:
-            self.destroy()
-
     def add_component(self, component) -> None:
         if component in self.components:
             raise BaseException(
-                "Cannot add the same component twice to a notification!")
+                "Cannot add the same component more than once to a notification.")
         self.components.append(component)
         component.bind(self)
 
-    def make_after(self, waitMillis: int, func: callable) -> None:
-        self.afterIds.append(self.after(waitMillis, func))
+    def make_after(self, waitMillis: int, func: callable, *args) -> None:
+        self.afterIds.append(self.after(waitMillis, func, *args))
 
     def destroy_now(self) -> None:
+        # Only if not destroyed
+        if self.destroyed:
+            return
+        self.destroyed = True
         # Remove all after callbacks (due to a weird bug with multiple notifications)
         for afterId in self.afterIds:
             self.after_cancel(afterId)

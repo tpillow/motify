@@ -17,8 +17,8 @@ class AlphaFadeInTransition():
     def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
+        notification.on(EVENT_BEFORE_OPEN, self.before_open)
 
     def before_open(self, notification: BaseNotification) -> None:
         self.timer = 0.0
@@ -38,11 +38,9 @@ class AlphaFadeInTransition():
 
 
 class GrowDownTransition():
-    def __init__(self, duration: float = 1.0, startHeight: int = 0,
-                 endHeight: int = 100, tweenFunc: callable = tween.easeOutQuad):
+    def __init__(self, duration: float = 1.0, startHeight: int = 0, tweenFunc: callable = tween.easeOutQuad):
         self.duration = duration
         self.startHeight = startHeight
-        self.endHeight = endHeight
         self.tweenFunc = tweenFunc
         self.timer = 0.0
         self.bound = False
@@ -50,8 +48,9 @@ class GrowDownTransition():
     def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
+        self.endHeight = notification.winfo_height()
+        notification.on(EVENT_BEFORE_OPEN, self.before_open)
 
     def before_open(self, notification: BaseNotification) -> None:
         self.timer = 0.0
@@ -85,9 +84,9 @@ class AlphaFadeOutTransition():
     def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
+        self.bound = True
         notification.destroyOnCloseEvent = False
         notification.on(EVENT_CLOSE, self.on_close)
-        self.bound = True
 
     def on_close(self, notification: BaseNotification) -> None:
         self.timer = 0.0
@@ -107,10 +106,8 @@ class AlphaFadeOutTransition():
 
 
 class ShrinkUpTransition():
-    def __init__(self, duration: float = 1.0, startHeight: int = 100,
-                 endHeight: int = 0, tweenFunc: callable = tween.easeInQuad):
+    def __init__(self, duration: float = 1.0, endHeight: int = 0, tweenFunc: callable = tween.easeInQuad):
         self.duration = duration
-        self.startHeight = startHeight
         self.endHeight = endHeight
         self.tweenFunc = tweenFunc
         self.timer = 0.0
@@ -119,9 +116,10 @@ class ShrinkUpTransition():
     def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
+        self.bound = True
+        self.startHeight = notification.winfo_height()
         notification.destroyOnCloseEvent = False
         notification.on(EVENT_CLOSE, self.on_close)
-        self.bound = True
 
     def on_close(self, notification: BaseNotification) -> None:
         self.timer = 0.0
