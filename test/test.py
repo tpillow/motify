@@ -43,6 +43,14 @@ def show_text_notification():
     notif.show_notification()
 
 
+def show_image_large_size_center_notification():
+    notif = ImageNotification("./test/buddah.gif", width=480, height=400,
+                              hAlign=HAlignment.CENTER, vAlign=VAlignment.CENTER, timeout=1.0)
+    notif.add_component(AlphaFadeInTransition())
+    notif.add_component(AlphaFadeOutTransition())
+    notif.show_notification()
+
+
 def show_text_notification_alpha_fades_grow_shring():
     notif = TextNotification(
         "This here be some text. Maybe two lines worth.", timeout=1.0)
@@ -110,6 +118,7 @@ run_tests([
     show_blank_base_notification_with_grow_shrink,
     show_blank_base_notification_with_alpha_fades_grow_shrink,
     show_text_notification,
+    show_image_large_size_center_notification,
     show_text_notification_alpha_fades_grow_shring,
     show_text_notification_timeout_bar,
     show_text_notification_context_menu_timeout_bar,

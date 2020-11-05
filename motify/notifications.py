@@ -245,3 +245,15 @@ class TextNotification(BaseNotification):
             bg=hoverBackgroundColor))
         self.on(EVENT_HOVER_OFF, lambda notification: self.textLabel.config(
             bg=backgroundColor))
+
+
+class ImageNotification(BaseNotification):
+    def __init__(self, imagePath: str, **kwargs):
+        # Super
+        BaseNotification.__init__(self, **kwargs)
+
+        # Create the image
+        self.photo = tk.PhotoImage(file=imagePath)
+        self.imageLabel = tk.Label(
+            self.frame, image=self.photo)
+        self.imageLabel.pack(fill=tk.BOTH, expand=1)
