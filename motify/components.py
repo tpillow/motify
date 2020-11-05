@@ -32,3 +32,33 @@ class TimeoutProgressBarComponent():
                            int(notification.timeoutTimer / notification.timeout *
                                self.canvas.winfo_width()),
                            self.canvas.winfo_height())
+
+
+class ContextMenuComponent():
+    def __init__(self, menuOpts: list[tuple]):
+        # List of (Str, Callable)
+        self.menuOpts = menuOpts
+
+    def bind(self, notification: BaseNotification) -> None:
+        # Save the notification for use
+        self.notification = notification
+
+        # Create the menu
+        self.menu = tk.Menu(notification.frame, tearoff=0)
+        for opt in self.menuOpts:
+            self.menu.add_command(label=opt[0], command=opt[1])
+        notification.bind("<Button-3>", self.show_menu)
+
+    def show_menu(self, event=None) -> None:
+        # We have to stop the timeout timer from closing the widget
+        oldTimerRunning = self.notification.timeoutTimerRunning
+        self.notification.timeoutTimerRunning = False
+
+        # Display the menu and close it properly
+        try:
+            self.menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.menu.grab_release()
+
+        # Re-enable the timeout timer to it's previous state
+        self.notification.timeoutTimerRunning = oldTimerRunning

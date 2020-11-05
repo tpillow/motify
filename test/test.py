@@ -9,19 +9,6 @@ COLOR_TEXT: str = "#F9E0D9"
 COLOR_SECONDARY: str = "#F24C00"
 
 
-def callback_ok():
-    print("Callback OK was triggered")
-
-
-def callback_cancel():
-    print("Callback CANCEL was triggered")
-
-
-def trigger_notification_close_callback(notification: BaseNotification):
-    # Emit the notification close event right now
-    notification.emit_notification_close()
-
-
 def show_blank_base_notification():
     notif = BaseNotification(timeout=0.5)
     notif.show_notification()
@@ -75,6 +62,17 @@ def show_text_notification_timeout_bar():
     notif.show_notification()
 
 
+def show_text_notification_context_menu_timeout_bar():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=2.0)
+    notif.add_component(ContextMenuComponent(
+        [("Option A", lambda: print("A")), ("Option B", lambda: print("B"))]))
+    bar = TimeoutProgressBarComponent()
+    notif.add_component(bar)
+    bar.canvas.pack(fill=tk.X)
+    notif.show_notification()
+
+
 def run_tests(testFuncs: list[callable]):
     for testFunc in testFuncs:
         print(f"Running {getattr(testFunc, '__name__', 'UNDEFINED_NAME')}")
@@ -92,4 +90,5 @@ run_tests([
     show_text_notification,
     show_text_notification_alpha_fades_grow_shring,
     show_text_notification_timeout_bar,
+    show_text_notification_context_menu_timeout_bar,
 ])
