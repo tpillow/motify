@@ -1,7 +1,7 @@
 # Imports
 import pytweening as tween
 import time
-import notifications as bn
+from .notifications import *
 
 
 class AlphaFadeInTransition():
@@ -14,25 +14,25 @@ class AlphaFadeInTransition():
         self.timer = 0.0
         self.bound = False
 
-    def bind(self, notification: bn.BaseNotification) -> None:
+    def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(bn.EVENT_BEFORE_OPEN, self.before_open)
+        notification.on(EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
-    def before_open(self, notification: bn.BaseNotification) -> None:
+    def before_open(self, notification: BaseNotification) -> None:
         self.timer = 0.0
         notification.attributes("-alpha", self.startAlpha)
-        notification.on(bn.EVENT_TICK, self.tick)
+        notification.on(EVENT_TICK, self.tick)
 
-    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+    def tick(self, notification: BaseNotification, delta: float) -> None:
         self.timer += delta
         self.alpha = self.startAlpha + \
             (self.endAlpha - self.startAlpha) * \
             self.tweenFunc(min(1.0, self.timer / self.duration))
         if self.alpha >= self.endAlpha:
             self.alpha = self.endAlpha
-            notification.remove_on(bn.EVENT_TICK, self.tick)
+            notification.remove_on(EVENT_TICK, self.tick)
         else:
             notification.attributes("-alpha", self.alpha)
 
@@ -47,26 +47,26 @@ class GrowDownTransition():
         self.timer = 0.0
         self.bound = False
 
-    def bind(self, notification: bn.BaseNotification) -> None:
+    def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
-        notification.on(bn.EVENT_BEFORE_OPEN, self.before_open)
+        notification.on(EVENT_BEFORE_OPEN, self.before_open)
         self.bound = True
 
-    def before_open(self, notification: bn.BaseNotification) -> None:
+    def before_open(self, notification: BaseNotification) -> None:
         self.timer = 0.0
         notification.geometry(
             f"{notification.winfo_width()}x{self.startHeight}")
-        notification.on(bn.EVENT_TICK, self.tick)
+        notification.on(EVENT_TICK, self.tick)
 
-    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+    def tick(self, notification: BaseNotification, delta: float) -> None:
         self.timer += delta
         self.height = int(self.startHeight +
                           (self.endHeight - self.startHeight) *
                           self.tweenFunc(min(1.0, self.timer / self.duration)))
         if self.height >= self.endHeight:
             self.height = self.endHeight
-            notification.remove_on(bn.EVENT_TICK, self.tick)
+            notification.remove_on(EVENT_TICK, self.tick)
         else:
             notification.geometry(
                 f"{notification.winfo_width()}x{self.height}")
@@ -82,25 +82,25 @@ class AlphaFadeOutTransition():
         self.timer = 0.0
         self.bound = False
 
-    def bind(self, notification: bn.BaseNotification) -> None:
+    def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
         notification.destroyOnCloseEvent = False
-        notification.on(bn.EVENT_CLOSE, self.on_close)
+        notification.on(EVENT_CLOSE, self.on_close)
         self.bound = True
 
-    def on_close(self, notification: bn.BaseNotification) -> None:
+    def on_close(self, notification: BaseNotification) -> None:
         self.timer = 0.0
         notification.attributes("-alpha", self.startAlpha)
-        notification.on(bn.EVENT_TICK, self.tick)
+        notification.on(EVENT_TICK, self.tick)
 
-    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+    def tick(self, notification: BaseNotification, delta: float) -> None:
         self.timer += delta
         self.alpha = self.startAlpha + \
             (self.endAlpha - self.startAlpha) * \
             self.tweenFunc(min(1.0, self.timer / self.duration))
         if self.alpha <= self.endAlpha:
-            notification.remove_on(bn.EVENT_TICK, self.tick)
+            notification.remove_on(EVENT_TICK, self.tick)
             notification.destroy()
         else:
             notification.attributes("-alpha", self.alpha)
@@ -116,27 +116,27 @@ class ShrinkUpTransition():
         self.timer = 0.0
         self.bound = False
 
-    def bind(self, notification: bn.BaseNotification) -> None:
+    def bind(self, notification: BaseNotification) -> None:
         if self.bound:
             raise "Cannot bind the same transition to more than one notification"
         notification.destroyOnCloseEvent = False
-        notification.on(bn.EVENT_CLOSE, self.on_close)
+        notification.on(EVENT_CLOSE, self.on_close)
         self.bound = True
 
-    def on_close(self, notification: bn.BaseNotification) -> None:
+    def on_close(self, notification: BaseNotification) -> None:
         self.timer = 0.0
         notification.geometry(
             f"{notification.winfo_width()}x{self.startHeight}")
-        notification.on(bn.EVENT_TICK, self.tick)
+        notification.on(EVENT_TICK, self.tick)
 
-    def tick(self, notification: bn.BaseNotification, delta: float) -> None:
+    def tick(self, notification: BaseNotification, delta: float) -> None:
         self.timer += delta
         self.height = int(self.startHeight +
                           (self.endHeight - self.startHeight) *
                           self.tweenFunc(min(1.0, self.timer / self.duration)))
         if self.height <= self.endHeight:
             self.height = self.endHeight
-            notification.remove_on(bn.EVENT_TICK, self.tick)
+            notification.remove_on(EVENT_TICK, self.tick)
             notification.destroy()
         else:
             notification.geometry(

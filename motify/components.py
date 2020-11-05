@@ -1,7 +1,7 @@
 # Imports
 import tkinter as tk
 from typing import Tuple
-from notifications import BaseNotification, EVENT_TICK
+from .notifications import *
 
 
 class ButtonComponent():

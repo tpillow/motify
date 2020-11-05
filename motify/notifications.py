@@ -2,7 +2,7 @@
 import tkinter as tk
 from enum import Enum
 import time
-import event_manager
+from .event_manager import *
 
 EVENT_BEFORE_OPEN: str = "before_open"  # notification
 EVENT_OPEN: str = "open"  # notification
@@ -43,7 +43,7 @@ class BaseNotification(tk.Tk):
         tk.Tk.__init__(self)
 
         # Our event system
-        self.eventManager = event_manager.EventManager()
+        self.eventManager = EventManager()
         self.destroyOnCloseEvent = destroyOnCloseEvent
         self.closeOnTimeout = closeOnTimeout
         self.tickResolution = tickResolution
