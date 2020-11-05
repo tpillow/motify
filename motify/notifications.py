@@ -106,11 +106,12 @@ class BaseNotification(tk.Tk):
 
     def on_notification_clicked(self, event=None) -> None:
         # Emit to listeners
-        self.eventManager.emit(EVENT_CLICKED, self)
+        if not self.closeEmitted:
+            self.eventManager.emit(EVENT_CLICKED, self)
 
     def on_hover_on(self, event=None) -> None:
         # For some reason, tkinter emits this event twice...
-        if self.isHoveringOn:
+        if self.isHoveringOn or self.closeEmitted:
             return
         # Emit to listeners
         self.isHoveringOn = True
@@ -118,7 +119,7 @@ class BaseNotification(tk.Tk):
 
     def on_hover_off(self, event=None) -> None:
         # For some reason, tkinter emits this event twice...
-        if not self.isHoveringOn:
+        if not self.isHoveringOn or self.closeEmitted:
             return
         # Emit to listeners
         self.isHoveringOn = False

@@ -73,6 +73,28 @@ def show_text_notification_context_menu_timeout_bar():
     notif.show_notification()
 
 
+def show_text_notification_timeout_bar_stop_hover():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=1.5)
+    bar = TimeoutProgressBarComponent()
+    notif.add_component(bar)
+    bar.canvas.pack(fill=tk.X)
+    notif.add_component(StopTimeoutOnHoverComponent())
+    notif.show_notification()
+
+
+def show_text_notification_timeout_bar_stop_hover_alpha_fade():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=1.5)
+    bar = TimeoutProgressBarComponent()
+    notif.add_component(bar)
+    bar.canvas.pack(fill=tk.X)
+    notif.add_component(StopTimeoutOnHoverComponent())
+    notif.add_component(AlphaFadeInTransition())
+    notif.add_component(AlphaFadeOutTransition())
+    notif.show_notification()
+
+
 def run_tests(testFuncs: list[callable]):
     for testFunc in testFuncs:
         print(f"Running {getattr(testFunc, '__name__', 'UNDEFINED_NAME')}")
@@ -91,4 +113,6 @@ run_tests([
     show_text_notification_alpha_fades_grow_shring,
     show_text_notification_timeout_bar,
     show_text_notification_context_menu_timeout_bar,
+    show_text_notification_timeout_bar_stop_hover,
+    show_text_notification_timeout_bar_stop_hover_alpha_fade,
 ])

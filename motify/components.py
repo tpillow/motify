@@ -34,6 +34,23 @@ class TimeoutProgressBarComponent():
                            self.canvas.winfo_height())
 
 
+class StopTimeoutOnHoverComponent():
+    def __init__(self, resetTimeoutAfter: bool = True):
+        self.resetTimeoutAfter = resetTimeoutAfter
+
+    def bind(self, notification: BaseNotification) -> None:
+        notification.on(EVENT_HOVER_ON, self.on_hover)
+        notification.on(EVENT_HOVER_OFF, self.off_hover)
+
+    def on_hover(self, notification: BaseNotification) -> None:
+        notification.timeoutTimerRunning = False
+
+    def off_hover(self, notification: BaseNotification) -> None:
+        notification.timeoutTimerRunning = True
+        if self.resetTimeoutAfter:
+            notification.timeoutTimer = 0.0
+
+
 class ContextMenuComponent():
     def __init__(self, menuOpts: list[tuple]):
         # List of (Str, Callable)
