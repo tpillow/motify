@@ -23,30 +23,55 @@ def trigger_notification_close_callback(notification: BaseNotification):
 
 
 def show_blank_base_notification():
-    notif = BaseNotification(timeout=0.5, closeOnTimeout=True)
+    notif = BaseNotification(timeout=0.5)
     notif.show_notification()
 
 
 def show_blank_base_notification_with_alpha_fades():
-    notif = BaseNotification(timeout=1.5, closeOnTimeout=True)
+    notif = BaseNotification(timeout=1.5)
     notif.add_component(AlphaFadeInTransition())
     notif.add_component(AlphaFadeOutTransition())
     notif.show_notification()
 
 
 def show_blank_base_notification_with_grow_shrink():
-    notif = BaseNotification(timeout=1.5, closeOnTimeout=True)
+    notif = BaseNotification(timeout=1.5)
     notif.add_component(GrowDownTransition())
     notif.add_component(ShrinkUpTransition())
     notif.show_notification()
 
 
 def show_blank_base_notification_with_alpha_fades_grow_shrink():
-    notif = BaseNotification(timeout=1.5, closeOnTimeout=True)
+    notif = BaseNotification(timeout=1.5)
     notif.add_component(AlphaFadeInTransition())
     notif.add_component(AlphaFadeOutTransition())
     notif.add_component(GrowDownTransition())
     notif.add_component(ShrinkUpTransition())
+    notif.show_notification()
+
+
+def show_text_notification():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=1.0)
+    notif.show_notification()
+
+
+def show_text_notification_alpha_fades_grow_shring():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=1.0)
+    notif.add_component(AlphaFadeInTransition())
+    notif.add_component(AlphaFadeOutTransition())
+    notif.add_component(GrowDownTransition())
+    notif.add_component(ShrinkUpTransition())
+    notif.show_notification()
+
+
+def show_text_notification_timeout_bar():
+    notif = TextNotification(
+        "This here be some text. Maybe two lines worth.", timeout=1.5)
+    bar = TimeoutProgressBarComponent()
+    notif.add_component(bar)
+    bar.canvas.pack(fill=tk.X)
     notif.show_notification()
 
 
@@ -64,4 +89,7 @@ run_tests([
     show_blank_base_notification_with_alpha_fades,
     show_blank_base_notification_with_grow_shrink,
     show_blank_base_notification_with_alpha_fades_grow_shrink,
+    show_text_notification,
+    show_text_notification_alpha_fades_grow_shring,
+    show_text_notification_timeout_bar,
 ])

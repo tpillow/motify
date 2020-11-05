@@ -147,8 +147,13 @@ class BaseNotification(tk.Tk):
             if self.timeoutTimer >= self.timeout and not self.didTimeout:
                 self.emit_notification_close()
 
-        # Emit the tick event, and re-start the ticker
+        # If the above exited the app, stop here
+        if self.destroyed:
+            return
+
+        # Emit the tick event, and re-start the ticker, if we're not closed
         self.eventManager.emit(EVENT_TICK, self, delta)
+        # Re-start the next ticker cycle
         self.make_after(self.tickResolution, self.emit_notification_tick)
 
     def emit_notification_close(self) -> None:
@@ -219,3 +224,23 @@ class BaseNotification(tk.Tk):
 
     def remove_on(self, eventName: str, callback: callable) -> None:
         self.eventManager.remove_on(eventName, callback)
+
+
+class TextNotification(BaseNotification):
+    def __init__(self, text: str, backgroundColor: str = "#333333", hoverBackgroundColor: str = "#111111",
+                 textColor: str = "#ffffff", fontName: str = "Courier", fontSize: int = 12,
+                 justify: str = tk.CENTER, **kwargs):
+        # Super
+        BaseNotification.__init__(self, **kwargs)
+
+        # Create the label
+        self.textLabel = tk.Label(self.frame, text=text, bg=backgroundColor,
+                                  fg=textColor, wraplength=self.winfo_width(), justify=justify)
+        self.textLabel.config(font=(fontName, fontSize))
+        self.textLabel.pack(fill=tk.BOTH, expand=1)
+
+        # Subscribe to hovers to change color
+        self.on(EVENT_HOVER_ON, lambda notification: self.textLabel.config(
+            bg=hoverBackgroundColor))
+        self.on(EVENT_HOVER_OFF, lambda notification: self.textLabel.config(
+            bg=backgroundColor))
