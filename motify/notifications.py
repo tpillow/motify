@@ -11,6 +11,7 @@ EVENT_CLICKED: str = "clicked"  # notification
 EVENT_HOVER_ON: str = "hover_on"  # notification
 EVENT_HOVER_OFF: str = "hover_off"  # notification
 EVENT_TICK: str = "tick"  # notification, delta: float
+EVENT_DESTROYED: str = "destroyed"  # notification
 
 
 class HAlignment(Enum):
@@ -219,6 +220,8 @@ class BaseNotification(tk.Tk):
             self.after_cancel(afterId)
         # Then destroy the app
         self.destroy()
+        # And indicate as such
+        self.eventManager.emit(EVENT_DESTROYED, self)
 
     def on(self, eventName: str, callback: callable) -> None:
         self.eventManager.on(eventName, callback)

@@ -51,6 +51,15 @@ def show_image_large_size_center_notification():
     notif.show_notification()
 
 
+def show_image_large_size_center_notification_print_click():
+    notif = ImageNotification("./test/buddah.gif", width=480, height=400,
+                              hAlign=HAlignment.CENTER, vAlign=VAlignment.CENTER, timeout=1.0)
+    notif.add_component(AlphaFadeInTransition())
+    notif.add_component(AlphaFadeOutTransition())
+    notif.on(EVENT_CLICKED, lambda notification: print("Clicked"))
+    notif.show_notification()
+
+
 def show_text_notification_alpha_fades_grow_shring():
     notif = TextNotification(
         "This here be some text. Maybe two lines worth.", timeout=1.0)
@@ -124,4 +133,5 @@ run_tests([
     show_text_notification_context_menu_timeout_bar,
     show_text_notification_timeout_bar_stop_hover,
     show_text_notification_timeout_bar_stop_hover_alpha_fade,
+    show_image_large_size_center_notification_print_click,
 ])
