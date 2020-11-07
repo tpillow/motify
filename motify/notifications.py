@@ -32,7 +32,7 @@ class VAlignment(Enum):
     FIXED = 4
 
 
-class BaseNotification(tk.Tk):
+class BaseNotification(tk.Toplevel):
     def __init__(self, width: int = 350, height: int = 125, alpha: float = 1.0,
                  hAlign: HAlignment = HAlignment.RIGHT, vAlign: VAlignment = VAlignment.TOP,
                  fixedHPosition: int = 0, fixedVPosition: int = 0, hMargin: int = 15, vMargin: int = 15,
@@ -40,7 +40,7 @@ class BaseNotification(tk.Tk):
                  tickResolution: int = 33, borderSize: int = 2, borderColor: str = "#666666",
                  borderRelief: str = "flat", cursor: str = "arrow", **kwargs):
         # Init the window
-        tk.Tk.__init__(self)
+        tk.Toplevel.__init__(self)
 
         # Variables to store
         self.eventManager = EventManager()
