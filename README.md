@@ -1,4 +1,4 @@
-# Motify
+# Motify (Incomplete Project)
 
 ## A small, lightweight cross-platform notification system.
 
